@@ -1,9 +1,26 @@
+body {
+    font-family: Arial;
+    font-size: 12px;
+}
+
+.pre-test-value {
+    stroke: red;
+}
+
 .test-line {
     stroke: black;
 }
 
+.tolltip-line {
+    stroke: red;
+}
+
 .label {
-    font-family: Helvetica Neue, sans;
+    /*font-family: Helvetica Neue, sans;
     font-size: 12px;
-    font-weight: 200;
+    font-weight: 200;*/
+}
+
+.hidden {
+    visibility: hidden;
 }
