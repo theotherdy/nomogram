@@ -24,3 +24,9 @@ body {
 .hidden {
     visibility: hidden;
 }
+
+path.pointedRect {
+    fill: rgba(255,0,0,0.7);
+    stroke: #000;
+    stroke-width: 0px;
+}
