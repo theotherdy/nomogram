@@ -7,26 +7,33 @@ body {
     stroke: red;
 }
 
-.test-line {
+.axis-line {
+    stroke-width: 2px;
     stroke: black;
+    shape-rendering : crispEdges;
 }
 
-.tolltip-line {
-    stroke: red;
+.test-line {
+    stroke-width: 2px;
 }
 
-.label {
-    /*font-family: Helvetica Neue, sans;
-    font-size: 12px;
-    font-weight: 200;*/
+.test-line.neg {
+    stroke: rgba(255,0,0,0.7);
 }
 
-.hidden {
-    visibility: hidden;
+.test-line.pos {
+    stroke: rgba(0, 0, 255, 0.7);
 }
 
 path.pointedRect {
-    fill: rgba(255,0,0,0.7);
     stroke: #000;
     stroke-width: 0px;
+}
+
+path.pointedRect.neg {
+    fill: rgba(255, 0, 0, 0.7);
+}
+
+path.pointedRect.pos {
+    fill: rgba(0, 0, 255, 0.7);
 }

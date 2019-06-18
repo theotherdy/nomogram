@@ -33,7 +33,7 @@ if (d3 !== undefined) {
 
 //consts
 var rangeMin = 20;
-var rangeMax = 490; //800;
+var rangeMax =  500; //800;
 var lLDomainMin = -6;
 var lLDomainMax = 6;
 var lLScaleMin = -3;
@@ -51,11 +51,9 @@ var endOfScaleLabels = 510; //810;
 var svg = d3.select("#main")
     .append("svg")
     .attr("width", 500)
-    .attr("height", 600); //.attr("height", 920);
+    .attr("height", 620); //.attr("height", 920);
 
-// Returns path data for a rectangle with rounded right corners.
-// Note: it’s probably easier to use a <rect> element with rx and ry attributes!
-// The top-left corner is ⟨x,y⟩.
+// Returns path data for a rectangle with rounded right corners and a pointed left side
 function leftRoundedRect(x, y, width, height, radius) {
     return "M" + x + "," + y
         + "L" + (x + height/2) + "," + (y - height/2)
@@ -64,6 +62,18 @@ function leftRoundedRect(x, y, width, height, radius) {
         + "v" + (height - 2 * radius)
         + "a" + radius + "," + radius + " 0 0 1 " + -radius + "," + radius
         + "h" + (radius - width)
+        /*+ "l" + x + "," + y*/
+        + "z";
+}
+// Returns path data for a rectangle with rounded left corners and a pointed right side
+function rightRoundedRect(x, y, width, height, radius) {
+    return "M" + x + "," + y
+        + "L" + (x - height/2) + "," + (y - height/2)
+        + "h" + (radius - width)
+        + "a" + radius + "," + radius + " 0 0 0 " + -radius + "," + radius
+        + "v" + (height - 2 * radius)
+        + "a" + radius + "," + radius + " 0 0 0 " + radius + "," + radius
+        + "h" + (width - radius )
         /*+ "l" + x + "," + y*/
         + "z";
 }
@@ -81,6 +91,10 @@ var logLikelihoodRatioScale = d3.scaleLinear()
     .range([rangeMin, rangeMax]);
 
 var preTestHandleY = preTestScaleLogOdds(-1);
+var lRHandleYNeg = 0.5 * (postTestScaleLogOdds(0) + preTestScaleLogOdds(-1));
+var lRHandleYPos = 0.5 * (postTestScaleLogOdds(0) + preTestScaleLogOdds(-1));
+var postTestHandleYNeg = postTestScaleLogOdds(0);
+var postTestHandleYPos = postTestScaleLogOdds(0);
 
 var labels = ['pre-test probability',
     'likelihood ratio',
@@ -107,7 +121,7 @@ var preTestLine = preTestLineG
     .attr("y2", preTestScaleLogOdds(3))
     .attr("x1", preTestAxis)
     .attr("x2", preTestAxis)
-    .attr("class", "test-line");
+    .attr("class", "axis-line");
 
 var lrLineG = svg.append("g");
 
@@ -117,7 +131,7 @@ var lrLine = lrLineG
     .attr("y2", logLikelihoodRatioScale(lLScaleMax))
     .attr("x1", lRAxis)
     .attr("x2", lRAxis)
-    .attr("class", "test-line");
+    .attr("class", "axis-line");
 
 var postTestLineG = svg.append("g");
 
@@ -127,7 +141,7 @@ var postTestLine = postTestLineG
     .attr("y2", postTestScaleLogOdds(3))
     .attr("x1", postTestAxis)
     .attr("x2", postTestAxis)
-    .attr("class", "test-line");
+    .attr("class", "axis-line");
 
 //////////////////////////////////////////////////////////////////////////////
 // this could be solved automatically..
@@ -151,8 +165,10 @@ function lrFmt(v) {
 //variables
 var preTestValue = expFmt(preTestScaleLogOdds.invert(preTestScaleLogOdds(-1)));
 //lrFmt(logLikelihoodRatioScale.invert(d3.event.x))
-var lRValue = lrFmt(logLikelihoodRatioScale.invert(0.5 * (postTestScaleLogOdds(0) + preTestScaleLogOdds(-1))));
-var postTestValue = expFmt(postTestScaleLogOdds.invert(postTestScaleLogOdds(0)));
+var lRValueNeg = lrFmt(logLikelihoodRatioScale.invert(0.5 * (postTestScaleLogOdds(0) + preTestScaleLogOdds(-1))));
+var lRValuePos = lrFmt(logLikelihoodRatioScale.invert(0.5 * (postTestScaleLogOdds(0) + preTestScaleLogOdds(-1))));
+var postTestValueNeg = expFmt(postTestScaleLogOdds.invert(postTestScaleLogOdds(0)));
+var postTestValuePos = expFmt(postTestScaleLogOdds.invert(postTestScaleLogOdds(0)));
 
 var preProbTicks = {
     list: [-3, -2, -0.954245, 0, 0.954245, 2, 3],
@@ -182,7 +198,7 @@ function addTicks(ticks)
             .attr("y1", function(d) { return ticks.scale(d); })
             .attr("y2", function(d) { return ticks.scale(d); })
             .attr("x1", -5).attr("x2", 5)
-            .attr("class", "test-line");
+            .attr("class", "axis-line");
         gs.append("text")
             .attr("y", function(d) { return ticks.scale(d); })
             .attr("x", 8)
@@ -215,16 +231,28 @@ postTestLineG
     .attr("transform", translate(postTestAxis, 0))
     .callReturn(addTicks(postProbTicks));
 
-var nomogramLine = svg.append("line")
+var nomogramLineNeg = svg.append("line")
     .attr("y1", preTestScaleLogOdds(-1))
     .attr("x1", preTestAxis)
     .attr("y2", postTestScaleLogOdds(0))
-    .attr("x2", 300)
-    .attr("class", "test-line");
+    .attr("x2", postTestAxis)
+    .attr("class", "test-line neg");
 
-function updateLine() {
-    nomogramLine.attr("y1", preTestHandleY);
-    nomogramLine.attr("y2", postTestHandle.attr("y"));
+var nomogramLinePos = svg.append("line")
+    .attr("y1", preTestScaleLogOdds(-1))
+    .attr("x1", preTestAxis)
+    .attr("y2", postTestScaleLogOdds(0))
+    .attr("x2", postTestAxis)
+    .attr("class", "test-line pos");
+
+function updateLineNeg() {
+    nomogramLineNeg.attr("y1", preTestHandleY);
+    nomogramLineNeg.attr("y2", postTestHandleYNeg);
+}
+
+function updateLinePos() {
+    nomogramLinePos.attr("y1", preTestHandleY);
+    nomogramLinePos.attr("y2", postTestHandleYPos);
 }
 
 function dragAttrs(sel) {
@@ -234,323 +262,267 @@ function dragAttrs(sel) {
         .attr("cursor", "pointer");
 }
 
-/*
- * ToolTips to show value while dragging
- */
-
-var preTestToolTip = svg.append("g");
-preTestToolTip.attr("class", "hidden")
-
-preTestToolTip.attr("transform", "translate("+ 0 +"," + preTestScaleLogOdds(-1) +")");
-
-preTestToolTip.append("rect")
-    .attr("y", 0)
-    .attr("rx", 5)
-    .attr("x", preTestAxis-toolTipOffset-toolTipHeight)
-    .attr("width", toolTipWidth)
-    .attr("height", toolTipHeight)
-    .attr("class", "pre-test-value")
-    .attr("stroke", "rgba(255,0,0,0.7)")
-    .style("fill", "rgba(255,0,0,0.7)");
-
-preTestToolTip.append("text")
-    .attr("y", 6)
-    .attr("x", preTestAxis-toolTipOffset - 6)
-    .style("fill", "white")
-    .text(preTestValue);
-
-var lRToolTip = svg.append("g");
-lRToolTip.attr("class", "hidden")
-
-lRToolTip.attr("transform", "translate("+ 0 + "," + 0.5 * (postTestScaleLogOdds(0) + preTestScaleLogOdds(-1)) +")");
-
-lRToolTip.append("rect")
-    .attr("y", 0)
-    .attr("rx", 5)
-    .attr("x", lRAxis-toolTipOffset-toolTipHeight)
-    .attr("width", toolTipWidth)
-    .attr("height", toolTipHeight)
-    .attr("class", "pre-test-value")
-    .attr("stroke", "rgba(255,0,0,0.7)")
-    .style("fill", "rgba(255,0,0,0.7)");
-
-lRToolTip.append("text")
-    .attr("y", 6)
-    .attr("x", lRAxis-toolTipOffset - 6)
-    .style("fill", "white")
-    .text(lRValue);
-
-var postTestToolTip = svg.append("g");
-postTestToolTip.attr("class", "hidden")
-
-postTestToolTip.attr("transform", "translate("+ 0 +"," + postTestScaleLogOdds(0) +")");
-
-postTestToolTip.append("rect")
-    .attr("y", 0)
-    .attr("rx", 5)
-    .attr("x", postTestAxis-toolTipOffset-toolTipHeight)
-    .attr("width", toolTipWidth)
-    .attr("height", toolTipHeight)
-    .attr("class", "pre-test-value")
-    .attr("stroke", "rgba(255,0,0,0.7)")
-    .style("fill", "rgba(255,0,0,0.7)");
-
-postTestToolTip.append("text")
-    .attr("y", 6)
-    .attr("x", postTestAxis-toolTipOffset - 6)
-    .style("fill", "white")
-    .text(postTestValue);
-
-/*
- * Boxes to show values
- */
-var preTestBox = svg.append("g");
-
-preTestBox.attr("transform", "translate("+ preTestAxis +"," + endOfScaleLabels +")");
-
-preTestBox.append("rect")
-    .attr("y", 0)
-    .attr("rx", 8)
-    .attr("x", toolTipOffset)
-    .attr("width", toolTipWidth)
-    .attr("height", toolTipHeight)
-    .attr("class", "pre-test-value")
-    .attr("stroke", "rgba(255,0,0,0.7)")
-    .style("fill", "rgba(255,0,0,0.7)");
-
-preTestBox.append("text")
-    .attr("y", 6)
-    .attr("x", toolTipOffset + 14)
-    .style("fill", "white")
-    .text(preTestValue);
-
-var postTestBox = svg.append("g");
-
-postTestBox.attr("transform", "translate("+ postTestAxis +"," + endOfScaleLabels +")");
-
-postTestBox.append("rect")
-    .attr("y", 0)
-    .attr("rx", 8)
-    .attr("x", toolTipOffset)
-    .attr("width", toolTipWidth)
-    .attr("height", toolTipHeight)
-    .attr("class", "pre-test-value")
-    .attr("stroke", "rgba(255,0,0,0.7)")
-    .style("fill", "rgba(255,0,0,0.7)");
-
-postTestBox.append("text")
-    .attr("y", 6)
-    .attr("x", toolTipOffset + 14)
-    .style("fill", "white")
-    .text(postTestValue);
-
-var lRBox = svg.append("g");
-
-lRBox.attr("transform", "translate("+ lRAxis +"," + endOfScaleLabels +")");
-
-lRBox.append("rect")
-    .attr("y", 0)
-    .attr("rx", 8)
-    .attr("x", toolTipOffset)
-    .attr("width", toolTipWidth)
-    .attr("height", toolTipHeight)
-    .attr("class", "pre-test-value")
-    .attr("stroke", "rgba(255,0,0,0.7)")
-    .style("fill", "rgba(255,0,0,0.7)");
-
-lRBox.append("text")
-    .attr("y", 6)
-    .attr("x", toolTipOffset + 14)
-    .style("fill", "white")
-    .text(lRValue);
-
-/*var preTestHandle = svg.append("rect")
-    .attr("y", preTestScaleLogOdds(-1))
-    .attr("x", preTestAxis - 20)
-    .attr("width", 20)
-    .attr("height", 5)
-    //.style("fill", "transparent")
-    .attr("stroke", "rgba(255,0,0,0.7)")
-    .style("fill", "rgba(255,0,0,0.7)")
+//draggable group for preTest handle
+var preTestHandle = svg.append("g")
+    .attr("transform", "translate("+ preTestAxis +"," + preTestHandleY +")")
     .callReturn(dragAttrs)
     .call(d3.drag().on("drag", function() {
-            //dragging this updates both pre and postTest handles
-            //check that both still on scale
-            var lrX = Number(lrHandle.attr("y"));
-            var dy = lrX - d3.event.y;
-            var newPostTesty = lrX + dy;
-            //console.log(logLikelihoodRatioScale(lLScaleMin));
-            //console.log(logLikelihoodRatioScale(lLScaleMax));
-            if(newPostTesty >= rangeMin
-                && newPostTesty <= rangeMax
-                && d3.event.y >= rangeMin
-                && d3.event.y <= rangeMax
-            ) {
-                d3.select(this)
-                    .attr("y", d3.event.y);
-
-                preTestToolTip.classed('hidden', false);
-                preTestToolTip.attr("transform", "translate("+ 0 +"," + d3.event.y +")");
-                preTestValue = expFmt(preTestScaleLogOdds.invert(d3.event.y));
-                preTestToolTip.select('text').text(preTestValue);
-                preTestBox.select('text').text(preTestValue);
-
-                postTestHandle.attr("y", newPostTesty);
-                postTestValue = expFmt(postTestScaleLogOdds.invert(newPostTesty));
-                postTestBox.select('text').text(postTestValue);
-
-                //console.log(expFmt(preTestScaleLogOdds.invert()));
-                console.log(expFmt(preTestScaleLogOdds.invert(d3.event.y)));
-                updateLine();
-            }
-        }
-        ).on("end", function() {
-            preTestToolTip.classed('hidden', true);
-        })
-    );*/
-
-
-var preTestHandle = svg.append("path")
-    .attr("class", "pointedRect")
-    .attr("shape-rendering","crispEdges")
-    //.attr("stroke", "none")
-    .attr("d", leftRoundedRect(preTestAxis, preTestHandleY, toolTipWidth, 20, 5))
-    .attr("id", "preTestHandle")
-    //.style("fill", "rgba(255,0,0,0.7)")
-    .callReturn(dragAttrs)
-    .call(d3.drag().on("drag", function() {
-            //dragging this updates both pre and postTest handles
-            //check that both still on scale
-            var lrX = Number(lrHandle.attr("y"));
-            var dy = lrX - (preTestHandleY + d3.event.dy);
-            var newPostTesty = lrX + dy;
-            if(newPostTesty >= rangeMin
-                && newPostTesty <= rangeMax
+            //dragging this updates both pre and postTest handle - check that both still on scale
+            var lrXNeg = Number(lRHandleYNeg);
+            var lrXPos = Number(lRHandleYPos);
+            var dyNeg = lrXNeg - (preTestHandleY + d3.event.dy);
+            var dyPos = lrXPos - (preTestHandleY + d3.event.dy);
+            var newPostTestYNeg = lrXNeg + dyNeg;
+            var newPostTestYPos = lrXPos + dyPos;
+            if(newPostTestYNeg >= rangeMin
+                && newPostTestYNeg <= rangeMax
+                && newPostTestYPos >= rangeMin
+                && newPostTestYPos <= rangeMax
                 && (preTestHandleY + d3.event.dy) >= rangeMin
                 && (preTestHandleY + d3.event.dy) <= rangeMax
-            ) {
-                //d3.select(this).attr("y", d3.event.y);
-                this.y = this.y || 0;
-                this.y += d3.event.dy;
-                preTestHandleY += d3.event.dy
-                d3.select(this).attr("transform", "translate("+ 0 +"," + this.y +")");
+                ) {
+                preTestHandleY += d3.event.dy;
+                postTestHandleYNeg = newPostTestYNeg;
+                postTestHandleYPos = newPostTestYPos;
+                d3.select(this).attr("transform", "translate("+ preTestAxis +"," + preTestHandleY +")");
 
                 preTestValue = expFmt(preTestScaleLogOdds.invert(preTestHandleY));
-                preTestHandleText.text(preTestValue);
-                preTestHandleText.attr("y", preTestHandleY + handlePaddingY);
-                d3.select(this).select('text').text(preTestValue);
-                preTestBox.select('text').text(preTestValue);
+                preTestHandleTextNeg.text(preTestValue);
+                preTestHandleTextPos.text(preTestValue);
 
-                postTestHandle.attr("y", newPostTesty);
-                postTestValue = expFmt(postTestScaleLogOdds.invert(newPostTesty));
-                postTestBox.select('text').text(postTestValue);
-
-                updateLine();
+                //postTestHandle.attr("y", newPostTesty);
+                postTestHandleNeg.attr("transform", "translate("+ postTestAxis +"," + postTestHandleYNeg +")");
+                postTestValueNeg = expFmt(postTestScaleLogOdds.invert(postTestHandleYNeg));
+                postTestHandleNeg.select('text').text(postTestValueNeg);
+                postTestHandlePos.attr("transform", "translate("+ postTestAxis +"," + postTestHandleYPos +")");
+                postTestValuePos = expFmt(postTestScaleLogOdds.invert(postTestHandleYPos));
+                postTestHandlePos.select('text').text(postTestValuePos);
+                updateLineNeg();
+                updateLinePos();
             }
         })
     );
 
-var preTestHandleText = svg.append("text")
-    .attr("x", preTestAxis + handlePaddingX)
-    .attr("y", preTestHandleY + handlePaddingY)
+preTestHandle.append("path")
+    .attr("class", "pointedRect neg")
+    .attr("d", leftRoundedRect(0, 0, toolTipWidth, toolTipHeight, 5));
+
+preTestHandle.append("path")
+    .attr("class", "pointedRect pos")
+    .attr("d", rightRoundedRect(0, 0, toolTipWidth, toolTipHeight, 5));
+
+var preTestHandleTextNeg = preTestHandle.append("text")
+    .attr("x", handlePaddingX)
+    .attr("y", handlePaddingY)
+    .attr("stroke", "none")
+    .style("fill", "white")
+    .text(preTestValue);
+
+var preTestHandleTextPos = preTestHandle.append("text")
+    .attr("x", -toolTipWidth-5)
+    .attr("y", handlePaddingY)
+    .attr("stroke", "none")
     .style("fill", "white")
     .text(preTestValue);
 
 var lRlt1ToolTipFmt = d3.format(".3f");
 var lRlt1to10ToolTipFmt = d3.format(".2f");
 var lRgt10ToolTipFmt = d3.format(".0f");
-var lrHandle = svg.append("rect")
-    .attr("y", 0.5 * (postTestScaleLogOdds(0) + preTestScaleLogOdds(-1)))
-    .attr("x", 200 - 20)
-    .attr("width", 20)
-    .attr("height", 5)
-    .attr("stroke", "rgba(255,0,0,0.7)")
-    .style("fill", "rgba(255,0,0,0.7)")
+var lRHandleNeg = svg.append("g")
+    .attr("transform", "translate("+ lRAxis +"," + lRHandleYNeg +")")
     .callReturn(dragAttrs)
     .call(d3.drag().on("drag", function() {
         //dragging this updates both lr and postTest handles
         //check that both still on scale
-        var ptY = Number(preTestHandle.attr("y"));
-        var dy = d3.event.y - ptY;
-        var newPostTesty = d3.event.y + dy;
-        if(newPostTesty >= rangeMin
-            && newPostTesty <= rangeMax
-            && d3.event.y >= logLikelihoodRatioScale(lLScaleMin)
-            && d3.event.y <= logLikelihoodRatioScale(lLScaleMax)
+        var ptY = Number(preTestHandleY);
+        var dy = (lRHandleYNeg + d3.event.dy) - ptY;
+        var newPostTestY = (lRHandleYNeg + d3.event.dy) + dy;
+        if(newPostTestY >= rangeMin
+            && newPostTestY <= rangeMax
+            && (lRHandleYNeg + d3.event.dy) >= logLikelihoodRatioScale(lLScaleMin)
+            && (lRHandleYNeg + d3.event.dy) <= logLikelihoodRatioScale(lLScaleMax)
             ) {
-                d3.select(this).attr("y", d3.event.y);
+                lRHandleYNeg += d3.event.dy;
+                postTestHandleYNeg = newPostTestY;
+                d3.select(this).attr("transform", "translate("+ lRAxis +"," + lRHandleYNeg +")");
 
-                lRToolTip.classed('hidden', false);
-                lRToolTip.attr("transform", "translate("+ 0 +"," + d3.event.y +")");
-                var rawlRValue = lrFmt(logLikelihoodRatioScale.invert(d3.event.y));
-                var lRValue;
+                var rawlRValue = lrFmt(logLikelihoodRatioScale.invert(lRHandleYNeg));
+                var lRValueNeg;
                 if(rawlRValue < 1) {
-                    lRValue = lRlt1ToolTipFmt(rawlRValue);
+                    lRValueNeg = lRlt1ToolTipFmt(rawlRValue);
                 }
                 else if(rawlRValue < 10) {
-                    lRValue = lRlt1to10ToolTipFmt(rawlRValue, 2);
+                    lRValueNeg = lRlt1to10ToolTipFmt(rawlRValue, 2);
                 }
                 else {
-                    lRValue = lRgt10ToolTipFmt(rawlRValue);
+                    lRValueNeg = lRgt10ToolTipFmt(rawlRValue);
                 }
-                lRToolTip.select('text').text(lRValue);
-                lRBox.select('text').text(lRValue);
 
-                postTestHandle.attr("y", d3.event.y + dy);
-                postTestValue = expFmt(postTestScaleLogOdds.invert(d3.event.y + dy));
-                postTestBox.select('text').text(postTestValue);
+                lRHandleNeg.select('text').text(lRValueNeg);
+                postTestHandleNeg.attr("transform", "translate("+ postTestAxis +"," + postTestHandleYNeg +")");
+                postTestValueNeg = expFmt(postTestScaleLogOdds.invert(postTestHandleYNeg));
+                postTestHandleNeg.select('text').text(postTestValueNeg);
 
-                updateLine();
+                updateLineNeg();
             }
-        }).on("end", function() {
-        lRToolTip.classed('hidden', true);
-    }));
+        })
+    );
 
-var postTestHandle = svg.append("rect")
-    .attr("y", postTestScaleLogOdds(0))
-    .attr("x", 300 -  20)
-    .attr("width", 20)
-    .attr("height", 5)
-    .attr("stroke", "rgba(255,0,0,0.7)")
-    .style("fill", "rgba(255,0,0,0.7)")
+lRHandleNeg.append("path")
+    .attr("class", "pointedRect neg")
+    .attr("d", leftRoundedRect(0, 0, toolTipWidth, toolTipHeight, 5));
+
+lRHandleNeg.append("text")
+    .attr("x", handlePaddingX)
+    .attr("y", handlePaddingY)
+    .attr("stroke", "none")
+    .style("fill", "white")
+    .text(lRValueNeg);
+
+var lRHandlePos = svg.append("g")
+    .attr("transform", "translate("+ lRAxis +"," + lRHandleYPos +")")
     .callReturn(dragAttrs)
     .call(d3.drag().on("drag", function() {
-        //dragging this updates both postTest and lr handles
-        //check that both still on scale
-        var newLRy = 0.5 * (d3.event.y + Number(preTestHandle.attr("y")));
-        if(d3.event.y >= rangeMin
-            && d3.event.y <= rangeMax
+            //dragging this updates both lr and postTest handles
+            //check that both still on scale
+            var ptY = Number(preTestHandleY);
+            var dy = (lRHandleYPos + d3.event.dy) - ptY;
+            var newPostTestY = (lRHandleYPos + d3.event.dy) + dy;
+            if(newPostTestY >= rangeMin
+                && newPostTestY <= rangeMax
+                && (lRHandleYPos + d3.event.dy) >= logLikelihoodRatioScale(lLScaleMin)
+                && (lRHandleYPos + d3.event.dy) <= logLikelihoodRatioScale(lLScaleMax)
+            ) {
+                lRHandleYPos += d3.event.dy;
+                postTestHandleYPos = newPostTestY;
+                d3.select(this).attr("transform", "translate("+ lRAxis +"," + lRHandleYPos +")");
+
+                var rawlRValue = lrFmt(logLikelihoodRatioScale.invert(lRHandleYPos));
+                var lRValuePos;
+                if(rawlRValue < 1) {
+                    lRValuePos = lRlt1ToolTipFmt(rawlRValue);
+                }
+                else if(rawlRValue < 10) {
+                    lRValuePos = lRlt1to10ToolTipFmt(rawlRValue, 2);
+                }
+                else {
+                    lRValuePos = lRgt10ToolTipFmt(rawlRValue);
+                }
+
+                lRHandlePos.select('text').text(lRValuePos);
+                postTestHandlePos.attr("transform", "translate("+ postTestAxis +"," + postTestHandleYPos +")");
+                postTestValuePos = expFmt(postTestScaleLogOdds.invert(postTestHandleYPos));
+                postTestHandlePos.select('text').text(postTestValuePos);
+
+                updateLinePos();
+            }
+        })
+    );
+
+lRHandlePos.append("path")
+    .attr("class", "pointedRect pos")
+    .attr("d", rightRoundedRect(0, 0, toolTipWidth, toolTipHeight, 5));
+
+lRHandlePos.append("text")
+    .attr("x", -toolTipWidth-5)
+    .attr("y", handlePaddingY)
+    .attr("stroke", "none")
+    .style("fill", "white")
+    .text(lRValuePos);
+
+var postTestHandleNeg = svg.append("g")
+    .attr("transform", "translate("+ postTestAxis +"," + postTestHandleYNeg +")")
+    .callReturn(dragAttrs)
+    .call(d3.drag().on("drag", function() {
+        //dragging this updates both postTest and lr handles - check that both still on scale
+        var newLRy = 0.5 * ((postTestHandleYNeg + d3.event.dy) + Number(preTestHandleY));
+        if((postTestHandleYNeg + d3.event.dy) >= rangeMin
+            && (postTestHandleYNeg + d3.event.dy) <= rangeMax
             && newLRy >= logLikelihoodRatioScale(lLScaleMin)
             && newLRy <= logLikelihoodRatioScale(lLScaleMax)
-        ) {
-            d3.select(this).attr("y", d3.event.y);
+            ) {
+            //console.log(newLRy);
+            //console.log(logLikelihoodRatioScale(lLScaleMax));
+            postTestHandleYNeg += d3.event.dy;
+            lRHandleYNeg = newLRy;
+            d3.select(this).attr("transform", "translate("+ postTestAxis +"," + postTestHandleYNeg +")");
 
-            postTestToolTip.classed('hidden', false);
-            postTestToolTip.attr("transform", "translate("+ 0 +"," + d3.event.y +")");
-            postTestValue = expFmt(postTestScaleLogOdds.invert(d3.event.y));
-            postTestToolTip.select('text').text(postTestValue);
-            postTestBox.select('text').text(postTestValue);
-
-            lrHandle.attr("y", newLRy);
+            postTestValueNeg = expFmt(postTestScaleLogOdds.invert(postTestHandleYNeg));
+            postTestHandleNeg.select('text').text(postTestValueNeg);
+            lRHandleNeg.attr("transform", "translate("+ lRAxis +"," + lRHandleYNeg +")");
             var rawlRValue = lrFmt(logLikelihoodRatioScale.invert(newLRy));
-            var lRValue;
             if(rawlRValue < 1) {
-                lRValue = lRlt1ToolTipFmt(rawlRValue);
+                lRValueNeg = lRlt1ToolTipFmt(rawlRValue);
             }
             else if(rawlRValue < 10) {
-                lRValue = lRlt1to10ToolTipFmt(rawlRValue, 2);
+                lRValueNeg = lRlt1to10ToolTipFmt(rawlRValue, 2);
             }
             else {
-                lRValue = lRgt10ToolTipFmt(rawlRValue);
+                lRValueNeg = lRgt10ToolTipFmt(rawlRValue);
             }
-            lRBox.select('text').text(lRValue);
+            lRHandleNeg.select('text').text(lRValueNeg);
 
-
-            updateLine();
+            updateLineNeg();
         }
-    }).on("end", function() {
-            postTestToolTip.classed('hidden', true);
     })
     );
 
+postTestHandleNeg.append("path")
+    .attr("class", "pointedRect neg")
+    .attr("d", leftRoundedRect(0, 0, toolTipWidth, toolTipHeight, 5));
+
+postTestHandleNeg.append("text")
+    .attr("x", handlePaddingX)
+    .attr("y", handlePaddingY)
+    .attr("stroke", "none")
+    .style("fill", "white")
+    .text(postTestValueNeg);
+
+var postTestHandlePos = svg.append("g")
+    .attr("transform", "translate("+ postTestAxis +"," + postTestHandleYPos +")")
+    .callReturn(dragAttrs)
+    .call(d3.drag().on("drag", function() {
+            //dragging this updates both postTest and lr handles - check that both still on scale
+            var newLRy = 0.5 * ((postTestHandleYPos + d3.event.dy) + Number(preTestHandleY));
+            if((postTestHandleYPos + d3.event.dy) >= rangeMin
+                && (postTestHandleYPos + d3.event.dy) <= rangeMax
+                && newLRy >= logLikelihoodRatioScale(lLScaleMin)
+                && newLRy <= logLikelihoodRatioScale(lLScaleMax)
+            ) {
+                //console.log(newLRy);
+                //console.log(logLikelihoodRatioScale(lLScaleMax));
+                postTestHandleYPos += d3.event.dy;
+                lRHandleYPos = newLRy;
+                d3.select(this).attr("transform", "translate("+ postTestAxis +"," + postTestHandleYPos +")");
+
+                postTestValuePos = expFmt(postTestScaleLogOdds.invert(postTestHandleYPos));
+                postTestHandlePos.select('text').text(postTestValuePos);
+                lRHandlePos.attr("transform", "translate("+ lRAxis +"," + lRHandleYPos +")");
+                var rawlRValue = lrFmt(logLikelihoodRatioScale.invert(newLRy));
+                if(rawlRValue < 1) {
+                    lRValuePos = lRlt1ToolTipFmt(rawlRValue);
+                }
+                else if(rawlRValue < 10) {
+                    lRValuePos = lRlt1to10ToolTipFmt(rawlRValue, 2);
+                }
+                else {
+                    lRValuePos = lRgt10ToolTipFmt(rawlRValue);
+                }
+                lRHandlePos.select('text').text(lRValuePos);
+
+                updateLinePos();
+            }
+        })
+    );
+
+postTestHandlePos.append("path")
+    .attr("class", "pointedRect pos")
+    .attr("d", rightRoundedRect(0, 0, toolTipWidth, toolTipHeight, 5));
+
+postTestHandlePos.append("text")
+    .attr("x", -toolTipWidth-5)
+    .attr("y", handlePaddingY)
+    .attr("stroke", "none")
+    .style("fill", "white")
+    .text(postTestValuePos);
 
