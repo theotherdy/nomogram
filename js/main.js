@@ -1,5 +1,6 @@
 //import * as cscheid from "/js/cscheid/cscheid.js";
 
+
 if (d3 !== undefined) {
     // http://stackoverflow.com/questions/14167863/how-can-i-bring-a-circle-to-the-front-with-d3
     d3.selection.prototype.moveToFront = function() {
@@ -51,7 +52,8 @@ var endOfScaleLabels = 510; //810;
 var svg = d3.select("#main")
     .append("svg")
     .attr("width", 500)
-    .attr("height", 620); //.attr("height", 920);
+    .attr("height", 620) //.attr("height", 920);
+    .attr("viewBox", "0 0 500 620");
 
 // Returns path data for a rectangle with rounded right corners and a pointed left side
 function leftRoundedRect(x, y, width, height, radius) {

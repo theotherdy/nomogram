@@ -8,6 +8,7 @@
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js"></script>
     <script src="https://d3js.org/d3.v5.min.js"></script>
+    <!--script src="js/jquery.min.js"></script-->
     <!--script type="module" src="/js/cscheid/cscheid.js"></script-->
     <!--script type="text/x-mathjax-config">
       MathJax.Hub.Config({
@@ -25,6 +26,45 @@
     <div class="col-md-10">
         <h2 id="fagan-nomogram">Fagan Nomogram</h2>
         <div id="main"></div>
+        <form>
+            <table>
+                <thead>
+
+                </thead>
+                <tbody>
+                    <tr>
+                        <td></td>
+                        <th>
+                            Pre-test
+                        </th>
+                        <th>
+                            Likelihood Ratio
+                        </th>
+                        <th>
+                            Post-test
+                        </th>
+                    </tr>
+                    <tr valign="top">
+                        <th scope="row">
+                            Negative    
+                        </th>
+                        <td rowspan="2">
+                            <input class="probability" type="text"/> 
+                        </td>
+                        <td><input class="probability" type="text"/> </td>
+                        <td><input class="probability" type="text"/> </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">
+                            Positive
+                        </th>
+                        <td><input class="probability" type="text"/> </td>
+                        <td><input class="probability" type="text"/> </td>
+                    </tr>
+
+                </tbody>
+            </table>
+        </form>
     </div>
 </div>
 <hr/>

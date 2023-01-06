@@ -37,3 +37,7 @@ path.pointedRect.neg {
 path.pointedRect.pos {
     fill: rgba(0, 0, 255, 0.7);
 }
+
+input.probability{
+    width: 100px;
+}
